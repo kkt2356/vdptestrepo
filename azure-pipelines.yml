@@ -1,0 +1,43 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- main
+steps:
+- task: Maven@3
+  displayName: 'Maven pom.xml'
+
+- task: Docker@2
+  displayName: 'Build service'
+  inputs:
+    containerRegistry: 'svcconnacr'
+    repository: 'kktvdptest'
+    command: 'buildAndPush'
+    Dockerfile: 'Dockerfile'
+    tags: |
+      $(Build.BuildId)
+      latest
+
+- task: Docker@2
+  displayName: 'Push service'
+  inputs:
+    containerRegistry: 'svcconnacr'
+    repository: 'kktvdptest'
+    command: 'buildAndPush'
+    Dockerfile: 'Dockerfile'
+    tags: |
+      $(Build.BuildId)
+      latest
+
+- task: Bash@3
+  inputs:
+    targetType: 'inline'
+    script: 'sed -i "s/latest/$(Build.BuildId)/g" k8s/depoly.yaml'
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: 'k8s/depoly.yaml'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'
