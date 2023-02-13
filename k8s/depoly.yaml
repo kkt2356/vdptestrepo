@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: poc-was
+    namespace: aks-poc
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: poc-was
+    template:
+        metadata:
+            labels:
+                app: poc-was
+        spec:
+          containers:
+          - name: poc-was
+            image: vdptest.azurecr.io/kktvdptest:latest
+            imagePullPolicy: Always
+            ports:
+            - containerPort: 8080 # the application listens to this port
+            env:
+            - name: service.name # the application expects to connect to the API at this endpoint
+              value: poc-was
+            resources:
+              requests: # minimum resources required
+                cpu: 250m
+                memory: 64Mi
+              limits: # maximum resources allocated
+                cpu: 500m
+                memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: poc-was-svc
+  namespace: aks-poc
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 8080
+  selector:
+    app: poc-was
